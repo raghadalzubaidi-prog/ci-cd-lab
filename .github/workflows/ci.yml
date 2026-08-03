@@ -1,0 +1,31 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t ci-cd-lab .
+
+      - name: Run Container
+        run: |
+          docker run -d --name app -p 5000:5000 ci-cd-lab
+          sleep 5
+
+      - name: Smoke Test
+        run: |
+          curl http://localhost:5000 | grep "v1 - hello from CI"
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f app
