@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
   build-and-push:
@@ -14,37 +13,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Build Docker Image
-        run: docker build -t ci-cd-lab .
-
-      - name: Run Container
         run: |
-          docker run -d --name app -p 5000:5000 ci-cd-lab
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/ci-cd-lab:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/ci-cd-lab:latest
+
+      - name: Run container
+        run: |
+          docker run -d -p 5000:5000 ${{ secrets.DOCKER_USERNAME }}/ci-cd-lab:latest
           sleep 5
 
       - name: Smoke Test
         run: |
           curl http://localhost:5000 | grep "v1 - hello from CI"
-
-      - name: Tag Image
-        run: |
-          docker tag ci-cd-lab ${{ secrets.DOCKER_USERNAME }}/ci-cd-lab:${{ github.sha }}
-          docker tag ci-cd-lab ${{ secrets.DOCKER_USERNAME }}/ci-cd-lab:latest
-
-      - name: Push Image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/ci-cd-lab:${{ github.sha }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/ci-cd-lab:latest
-
-      - name: Cleanup
-        if: always()
-        run: docker rm -f app
