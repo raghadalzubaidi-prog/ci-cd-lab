@@ -33,5 +33,5 @@ jobs:
           sleep 5
 
       - name: Smoke Test
-        run: |
-          curl http://localhost:5000 | grep "v1 - hello from CI"
+  run: |
+    curl http://localhost:5000 | grep "v2 - hello from CI"
