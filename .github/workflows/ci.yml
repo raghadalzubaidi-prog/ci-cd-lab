@@ -34,4 +34,4 @@ jobs:
 
       - name: Smoke Test
         run: |
-    curl http://localhost:5000 | grep "v2 - hello from CI"
+          curl http://localhost:5000 | grep "v2 - hello from CI"
