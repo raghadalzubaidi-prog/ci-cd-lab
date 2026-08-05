@@ -40,7 +40,7 @@ jobs:
           curl http://localhost:5000 | grep "v2 - hello from CI"
   deploy-staging:
     needs: build-and-push
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
           echo "Deploying application to staging..."
   deploy-production:
     needs: deploy-staging
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     environment:
       name: production
@@ -60,9 +60,35 @@ jobs:
 
       - name: Deploy to Production
         run: |
-          echo "Deploying application to production..."
-  notify-success:
+          kubectl apply -f k8s/deployment-prod.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl rollout status deployment/ci-cd-app
+  post-deploy-verification:
     needs: deploy-production
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check rollout status
+        run: |
+          kubectl rollout status deployment/ci-cd-app
+
+      - name: Production smoke test
+        run: |
+          kubectl run curl-test \
+            --image=curlimages/curl \
+            --rm -i \
+            --restart=Never \
+            -- curl http://ci-cd-service | grep "v2 - hello from CI"
+
+      - name: Rollback if verification fails
+        if: failure()
+        run: |
+          kubectl rollout undo deployment/ci-cd-app
+          exit 1
+  notify-success:
+    needs: post-deploy-verification
     runs-on: ubuntu-latest
 
     steps:
@@ -72,13 +98,13 @@ jobs:
           -d "{\"content\":\"✅ Production deployment succeeded\nCommit: ${{ github.sha }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
           ${{ secrets.DISCORD_WEBHOOK }}
 
-
   notify-failure:
     if: failure()
     needs:
       - build-and-push
       - deploy-staging
       - deploy-production
+      - post-deploy-verification
     runs-on: ubuntu-latest
 
     steps:
