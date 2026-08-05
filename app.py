@@ -1,4 +1,5 @@
 from flask import Flask
+import os
 
 app = Flask(__name__)
 
@@ -6,7 +7,7 @@ VERSION = "v2 - hello from CI"
 
 @app.route("/")
 def home():
-    return VERSION
+    return f"{VERSION} ({os.getenv('ENVIRONMENT', 'local')})"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
