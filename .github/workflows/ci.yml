@@ -38,3 +38,13 @@ jobs:
       - name: Smoke Test
         run: |
           curl http://localhost:5000 | grep "v2 - hello from CI"
+  deploy-staging:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying application to staging..."
