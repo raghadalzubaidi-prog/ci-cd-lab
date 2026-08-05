@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: raghad37/ci-cd-lab:latest
+          image: raghad37/ci-cd-lab:not-exist
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
