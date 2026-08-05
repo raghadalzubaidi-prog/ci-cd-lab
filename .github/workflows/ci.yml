@@ -61,3 +61,29 @@ jobs:
       - name: Deploy to Production
         run: |
           echo "Deploying application to production..."
+  notify-success:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Production success notification
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d "{\"content\":\"✅ Production deployment succeeded\nCommit: ${{ github.sha }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          ${{ secrets.DISCORD_WEBHOOK }}
+
+
+  notify-failure:
+    if: failure()
+    needs:
+      - build-and-push
+      - deploy-staging
+      - deploy-production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pipeline failure notification
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d "{\"content\":\"❌ CI/CD Pipeline Failed\nCommit: ${{ github.sha }}\nStage failed: Check GitHub Actions\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          ${{ secrets.DISCORD_WEBHOOK }}
